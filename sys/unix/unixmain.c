@@ -4,6 +4,12 @@
 
 /* main.c - Unix NetHack */
 
+/* Changed for the Asciiverse, 2026-10-17: with ASCIIVERSE defined, the
+ * playground is the player's own folder, unnethack under $XDG_DATA_HOME
+ * (else ~/.local/share), made on the first run, and the read-only data
+ * (nhdat, license) is read from the folder the binary is in; see
+ * av_playground() and av_dataprefix() below. */
+
 #include "hack.h"
 #include "dlb.h"
 #include "date.h"
@@ -13,6 +19,13 @@
 #include <pwd.h>
 #ifndef O_RDONLY
 #include <fcntl.h>
+#endif
+#ifdef ASCIIVERSE
+#include <unistd.h>
+#include <fcntl.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #endif
 
 #define config_error_add raw_printf
@@ -32,6 +45,10 @@ static void chdirx(const char *, boolean);
 #endif /* CHDIR */
 static boolean whoami(void);
 static void process_options(int, char **);
+#ifdef ASCIIVERSE
+static char *av_playground(void);
+static void av_dataprefix(const char *, const char *);
+#endif
 
 #ifdef _M_UNIX
 extern void check_sco_console(void);
@@ -120,6 +137,23 @@ main(int argc, char *argv[])
     dir = nh_getenv("NETHACKDIR");
     if (!dir) {
         dir = nh_getenv("HACKDIR");
+    }
+#endif
+#ifdef ASCIIVERSE
+    {
+        char startdir[BUFSZ];
+
+        if (!getcwd(startdir, sizeof startdir)) {
+            startdir[0] = '\0';
+        }
+        av_dataprefix(argv[0], startdir);
+    }
+    if (!dir && !(argc > 1 && !strncmp(argv[1], "-d", 2) && argv[1][2] != 'e')) {
+        /* folders get the usual 0755, not the game's file mask */
+        mode_t mask = umask(022);
+
+        dir = av_playground();
+        (void) umask(mask);
     }
 #endif
     if (argc > 1) {
@@ -534,6 +568,136 @@ chdirx(const char *dir, boolean wr)
     }
 }
 #endif /* CHDIR */
+
+#ifdef ASCIIVERSE
+/* Makes PATH (a folder) if it is missing; FALSE if it cannot. */
+static boolean
+av_mkdir(const char *path)
+{
+    struct stat st;
+
+    if (stat(path, &st) == 0) {
+        return S_ISDIR(st.st_mode);
+    }
+    return mkdir(path, 0755) == 0;
+}
+
+/* Makes an empty file NAME in the current folder if it is missing. */
+static void
+av_touch(const char *name)
+{
+    int fd = open(name, O_WRONLY | O_CREAT, FCMASK);
+
+    if (fd >= 0) {
+        (void) close(fd);
+    }
+}
+
+/* The player's playground: $XDG_DATA_HOME/unnethack, else
+ * ~/.local/share/unnethack, made with its save folder on the first run.
+ * The record, logfile, xlogfile and perm files must exist before the
+ * game locks them by linking to them, so they are made here too. */
+static char *
+av_playground(void)
+{
+    static char path[BUFSZ];
+    char here[BUFSZ];
+    const char *xdg = nh_getenv("XDG_DATA_HOME");
+    const char *home = nh_getenv("HOME");
+    char *p;
+
+    if (xdg && *xdg == '/' && strlen(xdg) < BUFSZ - 20) {
+        Sprintf(path, "%s/unnethack", xdg);
+    } else if (home && *home && strlen(home) < BUFSZ - 32) {
+        Sprintf(path, "%s/.local/share/unnethack", home);
+    } else {
+        return (char *) 0; /* stay where we are */
+    }
+    /* make each missing folder on the way */
+    for (p = path + 1; *p; p++) {
+        if (*p == '/') {
+            *p = '\0';
+            (void) av_mkdir(path);
+            *p = '/';
+        }
+    }
+    if (!av_mkdir(path)) {
+        return (char *) 0;
+    }
+    if (getcwd(here, sizeof here) && chdir(path) == 0) {
+        (void) av_mkdir("save");
+        av_touch(RECORD);
+        av_touch(LOGFILE);
+#ifdef XLOGFILE
+        av_touch(XLOGFILE);
+#endif
+        av_touch(HLOCK);
+        (void) chdir(here);
+    }
+    return path;
+}
+
+/* TRUE if FOLDER holds the data library. */
+static boolean
+av_has_data(const char *folder)
+{
+    char name[BUFSZ];
+
+    if (!*folder || strlen(folder) + strlen(DLBFILE) + 2 > sizeof name) {
+        return FALSE;
+    }
+    Sprintf(name, "%s/%s", folder, DLBFILE);
+    return access(name, R_OK) == 0;
+}
+
+/* Reads the shipped data (nhdat, license) from the folder the binary is
+ * in, else from the folder the game was started in (av starts a title in
+ * its install folder), else from the playground as before. */
+static void
+av_dataprefix(const char *argv0, const char *startdir)
+{
+    char exe[BUFSZ], *slash;
+    const char *found = (const char *) 0;
+    boolean have_exe = FALSE;
+#if defined(__APPLE__)
+    char raw[BUFSZ];
+    uint32_t size = sizeof raw;
+
+    if (_NSGetExecutablePath(raw, &size) == 0 && realpath(raw, exe)) {
+        have_exe = TRUE;
+    }
+#elif defined(__linux__)
+    ssize_t n = readlink("/proc/self/exe", exe, sizeof exe - 1);
+
+    if (n > 0) {
+        exe[n] = '\0';
+        have_exe = TRUE;
+    }
+#endif
+    if (!have_exe && argv0 && index(argv0, '/')
+        && strlen(startdir) + strlen(argv0) + 2 < sizeof exe) {
+        if (*argv0 == '/') {
+            Strcpy(exe, argv0);
+        } else {
+            Sprintf(exe, "%s/%s", startdir, argv0);
+        }
+        have_exe = TRUE;
+    }
+    if (have_exe && (slash = rindex(exe, '/')) != 0) {
+        *slash = '\0';
+        if (av_has_data(exe)) {
+            found = exe;
+        }
+    }
+    if (!found && av_has_data(startdir)) {
+        found = startdir;
+    }
+    if (found) {
+        fqn_prefix[DATAPREFIX] = (char *) alloc(strlen(found) + 2);
+        Sprintf(fqn_prefix[DATAPREFIX], "%s/", found);
+    }
+}
+#endif /* ASCIIVERSE */
 
 static boolean
 whoami(void)

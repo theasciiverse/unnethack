@@ -2139,6 +2139,15 @@ fopen_config_file(const char *filename, int src)
     if ((fp = fopen(tmp_config, "r")) != (FILE *)0) {
         return fp;
     } else {
+#  ifdef ASCIIVERSE
+        /* Changed for the Asciiverse, 2026-10-17: without ~/.unnethackrc,
+         * the options file is unnethackrc in the playground, the player's
+         * data folder, which is the current folder by now. */
+        if ((fp = fopen("unnethackrc", "r")) != (FILE *)0) {
+            configfile = "unnethackrc";
+            return fp;
+        }
+#  endif
         /* try .nethackrc? */
         if (!envp) {
             Strcpy(tmp_config, oldconfigfile);
