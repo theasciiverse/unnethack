@@ -139,7 +139,12 @@ typedef glyph_t nhsym;
  */
 #ifdef INTERNAL_COMP
 # define RLECOMP    /* run-length compression of levl array - JLee */
+/* Changed for the Asciiverse, 2026-10-17: ZEROCOMP's saves do not restore
+ * ("Read 0 instead of 4 bytes", the game lost), so the Asciiverse build,
+ * which has no external compressor, keeps only RLECOMP. */
+# ifndef ASCIIVERSE
 # define ZEROCOMP   /* zero-run compression of everything - Olaf Seibert */
+# endif
 #endif
 
 /* #define SPECIALIZATION */    /* do "specialized" version of new topology */
