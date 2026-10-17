@@ -363,6 +363,16 @@ topl_putsym(char c)
         cl_end();
     }
 #ifndef WIN32CON
+# ifdef ASCIIVERSE
+    /* Changed for the Asciiverse, 2026-10-17: a newline goes to the
+     * margin of a centred screen, so move to the next line instead */
+    if (c == '\n' && (av_offx || av_offy) && nh_CM) {
+        extern void cmov(int, int); /* termcap.c */
+
+        cmov(0, (int) ttyDisplay->cury);
+        return;
+    }
+# endif
     (void) putchar(c);
 #endif
 }

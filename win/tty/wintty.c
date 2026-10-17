@@ -2535,7 +2535,12 @@ tty_curs(
     if (cy <= 3 && cx <= 3) {
         nocmov(x, y);
 #ifndef NO_TERMS
-    } else if ((x <= 3 && cy <= 3) || (!nh_CM && x < cx)) {
+    } else if (((x <= 3 && cy <= 3) || (!nh_CM && x < cx))
+# ifdef ASCIIVERSE
+               /* a carriage return goes to the margin of a centred screen */
+               && !((av_offx || av_offy) && nh_CM)
+# endif
+              ) {
         (void) putchar('\r');
         ttyDisplay->curx = 0;
         nocmov(x, y);
