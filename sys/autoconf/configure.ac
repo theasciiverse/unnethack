@@ -427,9 +427,11 @@ NETHACK_ARG(randomized-planes,[Shuffling order of Elemental Planes],RANDOMIZED_P
 NETHACK_ARG(redo,[Redo last command],REDO,yes)
 NETHACK_ARG(clipping,[Allow smaller screens],CLIPPING,yes)
 NETHACK_ARG(menu-color,[TTY graphics menu color],MENU_COLOR,yes)
-if [[ "$enable_tty_graphics" == "yes" ||
-      "$enable_curses_graphics" == "yes" ||
-      "$enable_pdcurses_graphics" == "yes" ]]; then
+dnl Changed for the Asciiverse, 2026-10-17: test instead of bash's [[ ]], so
+dnl configure runs under any POSIX sh (dash, BusyBox ash).
+if test "x$enable_tty_graphics" = xyes ||
+   test "x$enable_curses_graphics" = xyes ||
+   test "x$enable_pdcurses_graphics" = xyes; then
 NETHACK_ARG(status-color,[TTY graphics status color],STATUS_COLORS,yes)
 NETHACK_ARG(status-hilites,[Status field highlighting],STATUS_HILITES,yes)
 fi

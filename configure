@@ -8647,9 +8647,11 @@ printf '%s\n' "#define MENU_COLOR /**/" >>confdefs.h
 
    fi
 
-if [[ "$enable_tty_graphics" == "yes" ||
-      "$enable_curses_graphics" == "yes" ||
-      "$enable_pdcurses_graphics" == "yes" ]]; then
+# Changed for the Asciiverse, 2026-10-17: test instead of bash's double brackets, so
+# configure runs under any POSIX sh (dash, BusyBox ash).
+if test "x$enable_tty_graphics" = xyes ||
+   test "x$enable_curses_graphics" = xyes ||
+   test "x$enable_pdcurses_graphics" = xyes; then
 { printf '%s\n' "$as_me:${as_lineno-$LINENO}: checking whether to enable status-color" >&5
 printf %s "checking whether to enable status-color... " >&6; }
    # Check whether --enable-status-color was given.
