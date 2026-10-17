@@ -255,8 +255,18 @@ winch(void)
 {
     int oldLI = LI, oldCO = CO, i;
     struct WinDesc *cw;
+#ifdef ASCIIVERSE
+    /* Changed for the Asciiverse, 2026-10-17: a resize that only moves
+     * the centred screen redraws it too, from a cleared screen */
+    int oldx = av_offx, oldy = av_offy;
+#endif
 
     getwindowsz();
+#ifdef ASCIIVERSE
+    if (oldx != av_offx || oldy != av_offy) {
+        oldLI = -1;
+    }
+#endif
     if ((oldLI != LI || oldCO != CO) && ttyDisplay) {
         ttyDisplay->rows = LI;
         ttyDisplay->cols = CO;
@@ -284,8 +294,21 @@ winch(void)
 #endif
                 i = ttyDisplay->toplin;
                 ttyDisplay->toplin = 0;
+#ifdef ASCIIVERSE
+                clear_screen(); /* nothing stays where it was */
+#endif
                 docrt();
                 bot();
+#ifdef ASCIIVERSE
+                /* docrt() draws nothing when the resize comes during its
+                 * own --More--, so send the map as it stands too
+                 * (display.c; not in extern.h) */
+                {
+                    extern void redraw_map(void);
+
+                    redraw_map();
+                }
+#endif
                 ttyDisplay->toplin = i;
                 flush_screen(1);
                 if (i) {

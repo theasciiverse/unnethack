@@ -661,6 +661,17 @@ tty_end_screen(void)
 void
 nocmov(int x, int y)
 {
+#ifdef ASCIIVERSE
+    /* Changed for the Asciiverse, 2026-10-17: while the screen is
+     * centred, every move is an absolute one with the offset added
+     * (cmov()), since a newline or a home would land in the margin. */
+    if ((av_offx || av_offy) && nh_CM) {
+        if ((int) ttyDisplay->curx != x || (int) ttyDisplay->cury != y) {
+            cmov(x, y);
+        }
+        return;
+    }
+#endif
     if ((int) ttyDisplay->cury > y) {
         if (UP) {
             while ((int) ttyDisplay->cury > y) {    /* Go up. */
@@ -710,7 +721,11 @@ nocmov(int x, int y)
 void
 cmov(int x, int y)
 {
+#ifdef ASCIIVERSE
+    xputs(tgoto(nh_CM, x + av_offx, y + av_offy));
+#else
     xputs(tgoto(nh_CM, x, y));
+#endif
     ttyDisplay->cury = y;
     ttyDisplay->curx = x;
 }
@@ -780,6 +795,11 @@ clear_screen(void)
 void
 home(void)
 {
+#ifdef ASCIIVERSE
+    if ((av_offx || av_offy) && nh_CM) {
+        xputs(tgoto(nh_CM, av_offx, av_offy));
+    } else
+#endif
     if (HO) {
         xputs(HO);
     } else if (nh_CM) {

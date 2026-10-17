@@ -8,6 +8,9 @@
 
 #include "hack.h"
 
+/* Changed for the Asciiverse, 2026-10-17: getwindowsz() centres the tty
+ * interface's 80x24 screen on a bigger terminal (av_offx, av_offy). */
+
 #if defined(BSD_JOB_CONTROL) || defined(_BULL_SOURCE)
 # ifdef HPUX
 #include <bsdtty.h>
@@ -73,6 +76,10 @@ struct termio termio;
 #include "tcap.h"	/* for LI and CO */
 #endif
 
+#ifdef ASCIIVERSE
+int av_offx = 0, av_offy = 0;
+#endif
+
 #ifdef _M_UNIX
 extern void sco_mapon(void);
 extern void sco_mapoff(void);
@@ -111,7 +118,20 @@ getwindowsz(void)
 	if (ttsz.ws_col)
 	    CO = ttsz.ws_col;
     }
-#endif
+#ifdef ASCIIVERSE
+    /* the game is laid out for 80x24: on a bigger terminal it keeps
+     * that size and is drawn in the middle */
+    av_offx = av_offy = 0;
+    if (CO > COLNO) {
+        av_offx = (CO - COLNO) / 2;
+        CO = COLNO;
+    }
+    if (LI > ROWNO + 3) {
+        av_offy = (LI - (ROWNO + 3)) / 2;
+        LI = ROWNO + 3;
+    }
+#endif /* ASCIIVERSE */
+#endif /* USE_WIN_IOCTL */
 }
 
 void

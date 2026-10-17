@@ -29,6 +29,13 @@ extern struct tc_gbl_data {   /* also declared in decl.h; defined in decl.c */
 #define CO tc_gbl_data.tc_CO
 #endif
 
+/* Changed for the Asciiverse, 2026-10-17: on a terminal bigger than
+ * 80x24 the tty interface draws its 80x24 screen centred, this far from
+ * the top left corner (sys/share/ioctl.c, win/tty/termcap.c). */
+#ifdef ASCIIVERSE
+extern int av_offx, av_offy;
+#endif
+
 extern struct tc_lcl_data {   /* defined and set up in termcap.c */
     char *tc_CM, *tc_ND, *tc_CD;
     char *tc_HI, *tc_HE, *tc_US, *tc_UE;
