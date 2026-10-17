@@ -92,3 +92,9 @@ tests/wishing/test_wishing
 
 # /win/
 /win/*/*.o
+
+# Asciiverse build output
+/out/
+/dist/
+/stage/
+/asciiverse/record/__pycache__/

@@ -1,0 +1,8 @@
+# What UnNetHack's archive holds, beside each other at the top: the
+# binary and its data library nhdat from out/, and the NetHack General
+# Public License, which the game also shows from its help menu. The game
+# writes nothing there: its saved games, scores, logs and options file
+# live in unnethack under the player's XDG data folder.
+out/unnethack
+out/nhdat
+dat/license
