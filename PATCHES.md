@@ -108,3 +108,9 @@ script.
   `asciiverse/casts/unnethack.cast` (100x30, asciicast v3), and with
   `--play SECONDS --bin DIR [--home DIR]` puts a build through its paces
   without recording.
+
+## Ours
+
+- **How to play it, at the top of README.** A short note on installing and
+  starting it with av, or from a release archive; the original text follows
+  unchanged.
