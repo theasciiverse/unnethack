@@ -7,7 +7,7 @@ With av, the Asciiverse client (https://asciiverse.sh):
     av play unnethack
 
 Or download the archive for your system from this repository's Releases,
-unpack it and run ./unnethack (unnethack.exe on Windows).
+unpack it and run ./unnethack.
 
 The original README follows.
 
