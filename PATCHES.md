@@ -54,6 +54,18 @@ script.
   Alpine (x86_64, aarch64; ncurses and Lua linked in) and macOS (x86_64,
   arm64; system ncurses, Lua 5.4.8 built static in the job from lua.org,
   sha256 pinned). Upstream's own CI, `unnethack.yml`, is left as it is.
+- C17, not C23: `asciiverse/build.sh` sets `ac_cv_prog_cc_c23=no`, so
+  configure (autoconf 2.72) does not add `-std=gnu23` where the
+  compiler's default is older (Apple clang). With `--disable-file-areas`
+  `src/dlb.c` and other files keep old-style (K&R) function definitions,
+  which C23 dropped; clang stops at `dlb_fopen(name, mode)` with
+  "unknown type name 'name'". GCC 14 accepted them, so Linux built.
+- `sys/autoconf/config.guess`, `sys/autoconf/config.sub`: GNU's
+  2024-07-27 versions in place of the 2005 ones, which did not know
+  aarch64 ("cannot guess build type" on the arm64 Linux runner).
+- The workflow retries the Lua download from lua.org (`curl --retry 5
+  --retry-all-errors --connect-timeout 20`); lua.org has refused and
+  dropped connections from the macOS runners.
 - `.gitignore`: `out/`, `dist/`, `stage/`.
 
 ## Source

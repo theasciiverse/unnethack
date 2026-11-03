@@ -39,6 +39,11 @@ CFLAGS="${CFLAGS:--O2} -DASCIIVERSE"
 case "$(uname -s)" in Linux) CFLAGS="$CFLAGS -D_GNU_SOURCE" ;; esac
 LDFLAGS="${LDFLAGS:-}"
 command -v col >/dev/null 2>&1 || export HAVE_COL=yes
+# UnNetHack is K&R C in places (old-style function definitions), which
+# C23 no longer accepts; autoconf 2.72's configure would add -std=gnu23
+# where the compiler does not default to it (Apple clang), so it is told
+# C23 is unsupported and the compiler's own C17 default stays
+export ac_cv_prog_cc_c23=no
 
 set -- --disable-file-areas --enable-tty-graphics --enable-curses-graphics \
   --enable-data-librarian --disable-seduce --with-compression=no \
